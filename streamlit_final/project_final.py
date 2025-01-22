@@ -160,9 +160,11 @@ st.image(image, caption="Major Events that Affected Stock Market 2004-2020", use
 
 
 # Difference in Close Price: Day of Event vs Day After Event
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 google_stock = pd.DataFrame({
@@ -175,15 +177,6 @@ google_stock = pd.DataFrame({
 })
 
 google_stock['Date'] = pd.to_datetime(google_stock['Date'])
-
-dates_to_check = [
-    '2004-11-04', '2008-09-16', '2008-11-05', '2009-02-18', 
-    '2010-05-07', '2012-11-07', '2015-07-07', '2016-11-10',
-    '2018-03-23', '2020-03-10'
-]
-dates_to_check = pd.to_datetime(dates_to_check)
-
-filtered_google_stock = google_stock[google_stock['Date'].isin(dates_to_check)].copy()
 
 index_to_event = {
     0: "George W. Bush Victory Announcement",
@@ -198,19 +191,9 @@ index_to_event = {
     9: "Market Crash Due to COVID-19"
 }
 
-filtered_google_stock['Event'] = filtered_google_stock.index.map(index_to_event)
-filtered_google_stock = filtered_google_stock.rename(columns={'Date': 'Day after the event'})
-
-final_filtered_google_stock = filtered_google_stock[['Event', 'Day after the event', 'Close']]
-
+# Create DataFrame for event analysis
 merged_data = pd.DataFrame({
-    'Events': [
-        "George W. Bush Victory Announcement", "Lehman Brothers Bankruptcy", 
-        "Obama's Victory Announcement", "American Recovery and Reinvestment Act Signed", 
-        "Flash Crash", "Obama's Victory Announcement (Re-elected)", 
-        "Start of China’s Stock Market Turmoil", "U.S. Presidential Election of Donald Trump", 
-        "Trade War and Tariffs", "Market Crash Due to COVID-19"
-    ],
+    'Events': list(index_to_event.values()),
     'Date': ['2004-11-03', '2008-09-15', '2008-11-04', '2009-02-17', 
              '2010-05-06', '2012-11-06', '2015-07-06', '2016-11-09',
              '2018-03-22', '2020-03-09'],
@@ -218,41 +201,59 @@ merged_data = pd.DataFrame({
               245.8, 332.8, 548.2, 779.1, 
               1025.1, 1274.2]
 })
-
 merged_data['Date'] = pd.to_datetime(merged_data['Date'])
 
-final_filtered_google_stock.rename(
-    columns={"Event": "Events", "Day after the event": "Day_After_Date", "Close": "Next_Close"}, inplace=True
-)
+final_filtered_google_stock = google_stock.copy()
+final_filtered_google_stock['Event'] = final_filtered_google_stock.index.map(index_to_event)
+final_filtered_google_stock = final_filtered_google_stock.rename(columns={'Date': 'Day_After_Date', 'Close': 'Next_Close'})
+
 
 combined_data = pd.merge(
     merged_data, 
     final_filtered_google_stock, 
-    on="Events", 
+    left_on="Events", 
+    right_on="Event", 
     how="inner"
 )
-
 combined_data["Close_Diff"] = combined_data["Next_Close"] - combined_data["Close"]
 
-
-st.title("Close Price Analysis for Significant Events")
-st.write(
-    "This application displays the differences in **Close** stock values between the day of the event and the day after the event."
+st.title("Google Stock Close Price Analysis for Significant Events")
+st.markdown(
+    """
+    This application provides a detailed visualization of the change in Google stock's **Close** price between the 
+    day of significant events and the day after.
+    """
 )
 
-st.subheader("Difference in Close Price: Day of Event vs Day After Event")
+st.subheader("Price Difference Visualization")
+fig, ax = plt.subplots(figsize=(12, 8))
+sns.barplot(
+    data=combined_data,
+    x="Close_Diff", 
+    y="Events", 
+    palette="coolwarm", 
+    ax=ax
+)
 
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.barh(combined_data["Events"], combined_data["Close_Diff"], color="skyblue")
-ax.set_xlabel("Difference in Close Price")
-ax.set_ylabel("Events")
-ax.set_title("Difference in Close Price: Day of Event vs Day After Event")
+ax.set_title("Close Price Difference: Event Day vs. Day After", fontsize=16, weight="bold")
+ax.set_xlabel("Difference in Close Price (USD)", fontsize=12)
+ax.set_ylabel("Significant Events", fontsize=12)
+ax.axvline(0, color="black", linewidth=1, linestyle="--")
 
-
-for i, v in enumerate(combined_data["Close_Diff"]):
-    ax.text(v, i, f"{v:.2f}", va="center", fontsize=10)
+for i in range(len(combined_data)):
+    ax.text(
+        combined_data["Close_Diff"].iloc[i], 
+        i, 
+        f"{combined_data['Close_Diff'].iloc[i]:.2f} USD", 
+        color="black", 
+        va="center", 
+        fontsize=10
+    )
 
 st.pyplot(fig)
+
+st.subheader("Event Data Summary")
+st.dataframe(combined_data[['Events', 'Date', 'Close', 'Day_After_Date', 'Next_Close', 'Close_Diff']])
 
 
 
@@ -261,7 +262,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+# Event data
 events_data = {
     "Events": [
         "George W. Bush Victory Announcement", "Lehman Brothers Bankruptcy", "Obama's Victory Announcement",
@@ -283,19 +284,19 @@ events_data = {
     ]
 }
 
+# Create DataFrame
+events_df = pd.DataFrame(events_data).sort_values(by='Date', ascending=True)
 
-events_df = pd.DataFrame(events_data)
-events_df = events_df.sort_values(by='Date', ascending=True)
-
-
+# Calculate Close Price Difference
 events_df['Close Diff'] = events_df['Close'] - events_df['Day Before Close']
 
+# Streamlit Subheader
+st.subheader("Difference in Close Price: Day Before and Day of Event")
 
-st.subheader("Difference in Close Price:Day Before and Day of Event")
+# Plotting
+fig, ax = plt.subplots(figsize=(14, 9))
 
-fig, ax = plt.subplots(figsize=(12, 8))
-
-
+# Bars with dynamic color coding
 bars = ax.barh(
     events_df["Events"], 
     events_df["Close Diff"], 
@@ -303,29 +304,28 @@ bars = ax.barh(
     edgecolor='black'
 )
 
-
+# Add data labels
 for bar in bars:
     width = bar.get_width()
-    color = 'white' if abs(width) > 5 else 'black'
+    label_x = width + (1.5 if width > 0 else -1.5)  # Adjust label position
+    color = 'white' if abs(width) > 10 else 'black'
     ax.text(
-        width + (1.5 if width > 0 else -1.5),  
-        bar.get_y() + bar.get_height() / 2,  
-        f"{width:.2f}",
-        va='center',
+        label_x, 
+        bar.get_y() + bar.get_height() / 2, 
+        f"{width:.2f}", 
+        va='center', 
         ha='center' if abs(width) < 2 else ('left' if width > 0 else 'right'),
         fontsize=10,
         color=color
     )
 
-
-ax.set_xlabel("Difference in Close Price ($)", fontsize=12)
-ax.set_ylabel("Events", fontsize=12)
-
+ax.set_title("Impact of Significant Events on Google Stock Close Prices", fontsize=16, weight='bold')
+ax.set_xlabel("Difference in Close Price ($)", fontsize=13)
+ax.set_ylabel("Significant Events", fontsize=13)
+ax.grid(axis='x', linestyle='--', alpha=0.5)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.grid(axis='x', linestyle='--', alpha=0.6)
 ax.tick_params(axis='both', which='major', labelsize=10)
-
 
 st.pyplot(fig)
 
