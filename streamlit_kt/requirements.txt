@@ -1,0 +1,8 @@
+numpy==1.26.4
+pandas
+seaborn
+streamlit
+plotly
+watchdog
+scikit-learn==1.2.2
+jupyterlab
