@@ -6,7 +6,7 @@ st.title("Project Summary: Impact of Events on Stock Prices")
 # Summary content
 st.markdown(
     """
-    ### Key Insights🔑
+    ### Key Insights🔑"
     - Analyzed the impact of significant events (e.g., acquisitions, political developments) on stock market performance.
     - Focused on events like the **COVID-19 market crash** and the **2016 U.S. Presidential Election** to study their influence on stock prices.
     - Visualized stock price trends for a week before and after each event, showing correlations between events and market behavior.
